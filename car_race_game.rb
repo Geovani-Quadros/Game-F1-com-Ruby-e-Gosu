@@ -3,13 +3,13 @@ require 'gosu'
 class Player
   attr_reader :player_x, :player_y, :vel_car, :collision_x, :collision_y
 
-  def initialize
-    @player_car_image = Gosu::Image.new("images/player_car.png")
-    @player_x = 250
+  def initialize(velocidade)
+    @player_car_image = Gosu::Image.new("images/car1.png")
+    @player_x = 280
     @player_y = 315
-    @vel_car = 5
+    @vel_car = velocidade
     @width = 80
-    @height = 205
+    @height = 200
     @collision_x = nil
     @collision_y = nil
   end
@@ -35,7 +35,6 @@ class Player
     @player_car_image.draw(@player_x, @player_y, 2)
   end
   
-
   # Método para verificar colisão com outro retângulo (como oponente)
   def colidiu?(obstaculo)
     # Verificar se há colisão
@@ -44,16 +43,13 @@ class Player
         @player_y < obstaculo.y + obstaculo.height &&
         @player_y + @height > obstaculo.y)
       
-      # Calcular os pontos de colisão (pode ser ajustado conforme a necessidade)
+      # Calcula os pontos de colisão
       @collision_x = (@player_x + obstaculo.x) / 2
-      #@collision_y = obstaculo.y + (obstaculo.height / 2)
       if (obstaculo.y + obstaculo.height) >= (@player_y + @height)
         @collision_y = obstaculo.y - (obstaculo.height / 2)
       else
         @collision_y = obstaculo.y + (obstaculo.height / 2)
       end
-
-      
       return true
     else
       # Retorna false se não houver colisão
@@ -67,12 +63,13 @@ end
 class Obstaculos
   attr_reader :x, :y, :width, :height, :obstacles_image
 
-  def initialize(janela_x)
-    @width = 50 #largura do cone: 50px
-    @height = 60 #altura do cone: 60px
-    @x = rand(janela_x - @width)
+  def initialize(janela_x, car_position_x)
+    @width = 80 #largura do F1 inimigo: 80px
+    @height = 200 #altura do F1 inimigo: 200px
+    @x = car_position_x if car_position_x < (janela_x - @width)
     @y = - (@height)
-    @obstacles_image = Gosu::Image.new("images/obstacle.png")
+    @image_car = ["images/car2.png", "images/car3.png", "images/car4.png", "images/car5.png", "images/car6.png", "images/car7.png", "images/car8.png"]
+    @obstacles_image = Gosu::Image.new(@image_car[rand(7)])
   end
 
   def draw_obs
@@ -93,13 +90,12 @@ class CarRaceGame < Gosu::Window
   def initialize
     @janela_x = 640
     @janela_y = 540
-    @vel_car_obs = 5
+    @vel_car_obs = 4
 
     super @janela_x, @janela_y, false
-    self.caption = "Jogo Treino F1 2D em Ruby"
+    self.caption = "Game F1 2D em Ruby"
 
     @car = nil
-    @cont_cone = 1
     @menu = true
     @obstacles = []
     @obstacle_timer = 0
@@ -129,7 +125,6 @@ class CarRaceGame < Gosu::Window
     end
   end
   
-  
   def draw
     @background_image.draw(0, 0, 0)
     
@@ -145,13 +140,12 @@ class CarRaceGame < Gosu::Window
     end
   end
 
-
   def update_obstacles
-    # Adiciona novos obstáculos a cada 1000 milissegundos
-    @obstacle_timer += 3
-    if @obstacle_timer > 100
-      @obstacles << Obstaculos.new(@janela_x)
-      @cont_cone += 1
+    # incrementa o obstacle_timer a cada 1 milésimo de segundos
+    # NÃO MEXER NOS PARÂMETROS (intervalo dos carros)
+    @obstacle_timer += (@vel_car_obs)
+    if @obstacle_timer > (420)
+      @obstacles << Obstaculos.new(@janela_x, @car.player_x)
       @obstacle_timer = 0
     end    
 
@@ -165,14 +159,12 @@ class CarRaceGame < Gosu::Window
     end
     
     @obstacles.reject! { |cone| cone.y > @janela_y }
-    
   end
-
 
   def inicio_jogo(menu)
     if (menu)
-      @car = Player.new()
-      @obstacles << Obstaculos.new(@janela_x)
+      @car = Player.new(@vel_car_obs)
+      @obstacles << Obstaculos.new(@janela_x, @car.player_x)
       @menu = false
     end
   end
